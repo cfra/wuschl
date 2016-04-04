@@ -8,8 +8,9 @@ import jinja2
 
 base_path = os.path.abspath(os.path.dirname(__file__))
 for t in [os.path.join(base_path, 'templates'),
-          os.path.join(sys.prefix, 'share/wuschl/templates')]:
-    if os.path.exists:
+          os.path.join(sys.prefix, 'share/wuschl/templates')
+          os.path.join(sys.prefix, 'local/share/wuschl/templates')]:
+    if os.path.exists(t):
         template_path = t
         break
 else:
