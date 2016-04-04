@@ -56,6 +56,11 @@ class Fuzzy(object):
             })
 
     def create(self):
+        if os.path.exists(self.name + '.c'):
+            print >>sys.stderr, "Won't override output file. Delete %s if you really want to." % (
+                    self.name + '.c'
+            )
+            return 1
         self._render('.c', 'main.c.j2'),
         self.update()
         return 0
