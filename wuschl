@@ -7,7 +7,13 @@ import sys
 import jinja2
 
 base_path = os.path.abspath(os.path.dirname(__file__))
-template_path = os.path.join(base_path, 'templates')
+for t in [os.path.join(base_path, 'templates'),
+          os.path.join(sys.prefix, 'share/wuschl/templates')]:
+    if os.path.exists:
+        template_path = t
+        break
+else:
+    raise RuntimeError("Cannot find wuschl's templates.")
 template_loader = jinja2.FileSystemLoader(template_path)
 template_env = jinja2.Environment(loader=template_loader)
 
