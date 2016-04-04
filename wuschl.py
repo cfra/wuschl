@@ -87,11 +87,12 @@ class Fuzzy(object):
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
-        print >>sys.stderr, "Usage: %s <name> <op>" % (sys.argv[0])
+        print >>sys.stderr, "Usage: %s <op> <name>" % (sys.argv[0])
+        print >>sys.stderr, "With op as one of: create,fuzz,update"
         sys.exit(1)
-    f = Fuzzy(sys.argv[1])
-    op = getattr(f, sys.argv[2], None)
+    f = Fuzzy(sys.argv[2])
+    op = getattr(f, sys.argv[1], None)
     if not callable(op):
-        print >>sys.stderr, "Unknown operation %r" % sys.argv[2]
+        print >>sys.stderr, "Unknown operation %r" % sys.argv[1]
         sys.exit(1)
     sys.exit(op())
