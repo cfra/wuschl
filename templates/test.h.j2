@@ -1,0 +1,107 @@
+#ifndef {{name|upper}}_TEST_H
+#define {{name|upper}}_TEST_H
+
+#define _GNU_SOURCE 1
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+struct testcase {
+	unsigned char *input;
+	size_t input_len;
+	unsigned char *output;
+	size_t output_len;
+	int ret;
+};
+
+struct testcase testcases[] = {
+{% for testcase in testcases %}
+	{
+		.input = "{{testcase.input}}",
+		.input_len = {{testcase.input_len}},
+		.output = "{{testcase.output}}",
+		.output_len = {{testcase.output_len}},
+		.ret = {{testcase.ret}}
+	},
+{% endfor %}
+};
+
+static int test(FILE *input, FILE *output);
+
+static int run_testcase(int id, bool verbose)
+{
+	struct testcase *t = &testcases[id];
+	char *output = NULL;
+	size_t output_len = 0;
+	FILE *o = open_memstream(&output, &output_len);
+	FILE *i = fmemopen(t->input, t->input_len, "r");
+
+	int ret = test(i,o);
+
+	fflush(o);
+	fclose(o);
+
+	if (output_len != t->output_len
+	    || memcmp(output, t->output, output_len)) {
+		printf("Test %d failed, output differs.\n", id);
+		if (verbose) {
+			printf("Expected output:\n%.*s", t->output_len, t->output);
+			printf("Received output:\n%.*s\n", output_len, output);
+		}
+		free(output);
+		return 1;
+	} else if (verbose) {
+		printf("Output matches.\n");
+	}
+
+	free(output);
+
+	if (ret != t->ret) {
+		printf("Test %d failed, retval differs.\n", id);
+		if (verbose) {
+			printf("Expected retval == %d, received retval == %d\n",
+			       t->ret, ret);
+		}
+		return 0;
+	} else if (verbose) {
+		printf("Return code matches.\n");
+	}
+
+	printf("Test %d passed.\n", id);
+	return 0;
+}
+
+static int run_all(void)
+{
+	int failed = 0;
+	int total = sizeof(testcases)/sizeof(testcases[0]);
+
+	for (int i = 0; i < total; i++)
+		failed += run_testcase(i, false);
+	printf("%d of %d tests passed.\n", total-failed, total);
+	printf("%d of %d tests failed.\n", failed, total);
+	return failed;
+}
+
+int main(int argc, char **argv)
+{
+	if (argc == 2 && !strcmp(argv[1], "-r"))
+		return test(stdin, stdout);
+
+	if (argc == 2 && argv[1][0] != '-') {
+		int id = atoi(argv[1]);
+		if (id >= sizeof(testcases)/sizeof(testcases[0])) {
+			fprintf(stderr, "Test %d doesn't exist.\n", id);
+			return 1;
+		}
+		return run_testcase(id, true);
+	}
+
+	if (argc == 1)
+		return run_all();
+	return 1;
+}
+
+#endif
