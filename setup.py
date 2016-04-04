@@ -11,12 +11,12 @@ setup(
     license='MIT',
     author='Christian Franke',
     author_email='nobody@nowhere.ws',
-    description='Tool to genrate testcases with afl',
+    description='Tool to generate testcases with afl',
     scripts=["wuschl"],
     requires=['jinja2'],
     data_files=[('share/wuschl/templates',[
         'templates/main.c.j2',
         'templates/test.h.j2'
     ])],
-    url="https://github.comf/cfra/wuschl/"
+    url="https://github.com/cfra/wuschl/"
 )
