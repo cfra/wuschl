@@ -2,13 +2,13 @@
 
 This is a small python script that aims at making it possible to conveniently
 build (regression) tests based on a corpus found by
-[[afl|http://lcamtuf.coredump.cx/afl/]].
+[afl](http://lcamtuf.coredump.cx/afl/).
 
 ## Design
 
 On creation of a new test, wuschl will create a c file and a header file.
 The c file initially contains one function `test` that takes an input and
-and output stream and returns an `int`.
+an output stream and returns an `int`.
 
 This function should be edited by the user so that it uses the data from
 the input stream in the operation that should be verified. The result of
@@ -44,7 +44,7 @@ Now you can initialize the fuzzing process:
 
     wuschl fuzz foo
 
-Wusch will complain that there is no starting point for fuzzing. To remediate this,
+Wuschl will complain that there is no starting point for fuzzing. To remediate this,
 put some test input into the `foo_afl/input` directory that was created. Now,
 running the fuzz command again will actually start the fuzzer.
 
@@ -71,4 +71,4 @@ data into the `test` function and see its output by calling
 
     ./foo -r
 
-incidentally, this is also the mode in which afl calls foo.
+Incidentally, this is also the mode in which afl calls foo.
