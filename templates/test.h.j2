@@ -13,9 +13,9 @@
 #include <stdbool.h>
 
 struct testcase {
-	unsigned char *input;
+	char *input;
 	size_t input_len;
-	unsigned char *output;
+	char *output;
 	size_t output_len;
 	int ret;
 };
@@ -51,8 +51,8 @@ static int run_testcase(int id, bool verbose)
 	    || memcmp(output, t->output, output_len)) {
 		printf("Test %d failed, output differs.\n", id);
 		if (verbose) {
-			printf("Expected output:\n%.*s", t->output_len, t->output);
-			printf("Received output:\n%.*s\n", output_len, output);
+			printf("Expected output:\n%.*s", (int)t->output_len, t->output);
+			printf("Received output:\n%.*s\n", (int)output_len, output);
 		}
 		free(output);
 		return 1;
