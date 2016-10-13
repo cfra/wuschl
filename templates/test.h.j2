@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 
 	if (argc == 2 && argv[1][0] != '-') {
 		int id = atoi(argv[1]);
-		if (id >= sizeof(testcases)/sizeof(testcases[0])) {
+		if ((size_t)id >= sizeof(testcases)/sizeof(testcases[0])) {
 			fprintf(stderr, "Test %d doesn't exist.\n", id);
 			return 1;
 		}
