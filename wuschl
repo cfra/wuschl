@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+import ast
 import errno
 import os
 import subprocess
@@ -18,6 +19,9 @@ else:
 template_loader = jinja2.FileSystemLoader(template_path)
 template_env = jinja2.Environment(loader=template_loader)
 
+def _to_bin(binary):
+    return ''.join([ '\\x%02x' % ord(b) for b in binary])
+
 class Fuzzy(object):
     def __init__(self, name):
         self.name = name
@@ -35,10 +39,7 @@ class Fuzzy(object):
         with open(self.name + suffix, 'w') as ofile:
             ofile.write(template_env.get_template(template).render(self._dict()))
 
-    def _collect(self):
-        def _to_bin(binary):
-            return ''.join([ '\\x%02x' % ord(b) for b in binary])
-
+    def _collect_from_afl(self):
         self.testcases = []
         if not os.path.exists(self.afldir + '/queue'):
             return
@@ -62,7 +63,41 @@ class Fuzzy(object):
                 'ret': ret
             })
 
+    def _collect_from_prog(self, update_output):
+        output = subprocess.check_output(['./%s' % self.name, '-d'])
+
+        self.testcases = []
+        for line in output.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+
+            input_hex,output_hex,ret = line.split(',')
+            self.testcases.append({
+                'input': input_hex,
+                'input_len': len(input_hex)//4,
+                'output': output_hex,
+                'output_len': len(output_hex)//4,
+                'ret': int(ret)
+            })
+
+        if not update_output:
+            return
+
+        for t in self.testcases:
+            input_data = ast.literal_eval('"' + t['input'] + '"')
+            p = subprocess.Popen(['./%s' % self.name, '-r'], stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output_data,_ = p.communicate(input_data)
+            p.wait()
+            ret = p.returncode
+
+            t['output'] = _to_bin(output_data)
+            t['output_len'] = len(output_data)
+            t['ret'] = ret
+
     def create(self):
+        '''Creates a new empty test from the template'''
         if os.path.exists(self.name + '.c'):
             print >>sys.stderr, "Won't override output file. Delete %s if you really want to." % (
                     self.name + '.c'
@@ -73,11 +108,25 @@ class Fuzzy(object):
         return 0
 
     def update(self):
-        self._collect()
+        '''Collects tests from the afl corpus and updates the header'''
+        self._collect_from_afl()
+        self._render('_tests.h', 'test.h.j2')
+        return 0
+
+    def upgrade(self):
+        '''Upgrades the header with the new version in wusch. Tests stay the same'''
+        self._collect_from_prog(False)
+        self._render('_tests.h', 'test.h.j2')
+        return 0
+
+    def rebuild(self):
+        '''Rebuilds the expected outputs for the existing tests in the header'''
+        self._collect_from_prog(True)
         self._render('_tests.h', 'test.h.j2')
         return 0
 
     def fuzz(self):
+        '''Starts afl for the given program'''
         inputdir = self.afldir + '/input'
         for d in self.afldir, inputdir:
             try:
@@ -95,7 +144,15 @@ class Fuzzy(object):
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         print >>sys.stderr, "Usage: %s <op> <name>" % (sys.argv[0])
-        print >>sys.stderr, "With op as one of: create,fuzz,update"
+        print >>sys.stderr, "With op as one of:\n"
+        for op_name in dir(Fuzzy):
+            if op_name.startswith('_'):
+                continue
+            op = getattr(Fuzzy, op_name, None)
+            if not callable(op) or not op.__doc__:
+                continue
+            print >>sys.stderr, "  %10s  %s" % (op_name, op.__doc__)
+        print >>sys.stderr, ""
         sys.exit(1)
     f = Fuzzy(sys.argv[2])
     op = getattr(f, sys.argv[1], None)
