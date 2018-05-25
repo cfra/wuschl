@@ -7,7 +7,7 @@ if sys.version_info.major >= 3:
 
 setup(
     name="wuschl",
-    version="0.2.1",
+    version="0.3.0",
     license='MIT',
     author='Christian Franke',
     author_email='nobody@nowhere.ws',
