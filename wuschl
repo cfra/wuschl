@@ -26,10 +26,14 @@ class Fuzzy(object):
     def __init__(self, name):
         self.name = name
         self.afldir = name + '_afl'
+        self.inputdir = self.afldir + '/input'
+        for d in self.afldir, self.inputdir:
+            try:
+                os.mkdir(d)
+            except OSError, e:
+                if e.errno != errno.EEXIST:
+                    raise
         self.testcases = []
-
-    def _load_testcases(self):
-        pass
 
     def _dict(self):
         return dict([ (key, getattr(self, key)) for key in dir(self) if not key.startswith('_')
@@ -125,19 +129,20 @@ class Fuzzy(object):
         self._render('_tests.h', 'test.h.j2')
         return 0
 
+    def fill_input(self):
+        '''Put existing testcases into input dir'''
+        self._collect_from_prog(False)
+        for idx,t in enumerate(self.testcases):
+            input_data = ast.literal_eval('"' + t['input'] + '"')
+            with open(os.path.join(self.inputdir, 'input_%d' % idx), 'wb') as input_file:
+                input_file.write(input_data)
+
     def fuzz(self):
         '''Starts afl for the given program'''
-        inputdir = self.afldir + '/input'
-        for d in self.afldir, inputdir:
-            try:
-                os.mkdir(d)
-            except OSError, e:
-                if e.errno != errno.EEXIST:
-                    raise
-        if not os.listdir(inputdir):
-            print >>sys.stderr, "Please create one or more input files and put them into %s" % inputdir
+        if not os.listdir(self.inputdir):
+            print >>sys.stderr, "Please create one or more input files and put them into %s" % self.inputdir
             return 1
-        os.execvp("afl-fuzz", ["afl-fuzz", "-i", inputdir, "-o", self.afldir, "--",
+        os.execvp("afl-fuzz", ["afl-fuzz", "-i", self.inputdir, "-o", self.afldir, "--",
                                "./%s" % self.name, "-r"])
         return 1
 
