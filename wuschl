@@ -118,7 +118,7 @@ class Fuzzy(object):
         return 0
 
     def upgrade(self):
-        '''Upgrades the header with the new version in wusch. Tests stay the same'''
+        '''Upgrades the header with the new version in wuschl. Tests stay the same'''
         self._collect_from_prog(False)
         self._render('_tests.h', 'test.h.j2')
         return 0
